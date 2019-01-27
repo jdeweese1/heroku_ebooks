@@ -26,7 +26,7 @@ ENABLE_MASTODON_SOURCES = False # Fetch mastodon statuses as a source?
 ENABLE_MASTODON_POSTING = False # Toot resulting status?
 MASTODON_API_BASE_URL = ""  # an instance url like https://botsin.space
 CLIENT_CRED_FILENAME = ''  # the MASTODON client secret file you created for this project
-USER_ACCESS_FILENAME = '   # The MASTODON user credential file you created at installation.
+USER_ACCESS_FILENAME = ''   # The MASTODON user credential file you created at installation.
 
 # Sources (Twitter, Mastodon, local text file or a web page)
 TWITTER_SOURCE_ACCOUNTS = env.list('TWITTER_SOURCE_ACCOUNTS', default=['jaroddeweese', "hotdogsladies"])  # A list of comma-separated, quote-enclosed Twitter handles of account that you'll generate tweets based on. It should look like ["account1", "account2"]. If you want just one account, no comma needed.
