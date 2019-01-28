@@ -16,6 +16,8 @@ if READ_DOT_ENV_FILE is True:
 ENABLE_TWITTER_SOURCES = env.bool("ENABLE_TWITTER_SOURCES", default=True)  # Fetch twitter statuses as source
 ENABLE_TWITTER_POSTING = env.bool("ENABLE_TWITTER_POSTING", default=True)  # Tweet resulting status?
 
+CREATOR_USER_NAME = env.str("CREATOR_USER_NAME", "")
+
 MY_CONSUMER_KEY = env('MY_CONSUMER_KEY')  # Your Twitter API Consumer Key set in Heroku config
 MY_CONSUMER_SECRET = env('MY_CONSUMER_SECRET')  # Your Consumer Secret Key set in Heroku config
 MY_ACCESS_TOKEN_KEY = env('MY_ACCESS_TOKEN_KEY')  # Your Twitter API Access Token Key set in Heroku config
