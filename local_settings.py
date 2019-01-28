@@ -50,3 +50,5 @@ TWEET_ACCOUNT = ""  # The name of the account you're tweeting to.
 # Configuration for Twitter parser. TEST_SOURCE will be re-used as as the corpus location.
 TWITTER_ARCHIVE_NAME = env('TWITTER_ARCHIVE_NAME', default="tweets.csv")  # Name of your twitter archive
 IGNORE_RETWEETS = env('IGNORE_RETWEETS', default=True)  # If you want to remove retweets
+
+RUN_INTERVAL = env('RUN_INTERVAL', default=15)

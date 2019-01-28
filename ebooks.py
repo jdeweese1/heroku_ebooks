@@ -99,9 +99,9 @@ def scrape_page(src_url, web_context, web_attributes):
     return(tweets)
 
 
-def grab_tweets(api, max_id=None):
+def grab_tweets(api, user_name, max_id=None):
     source_tweets = []
-    user_tweets = api.GetUserTimeline(screen_name=user, count=200, max_id=max_id, include_rts=True, trim_user=True, exclude_replies=True)
+    user_tweets = api.GetUserTimeline(screen_name=user_name, count=200, max_id=max_id, include_rts=True, trim_user=True, exclude_replies=True)
     if user_tweets:
         max_id = user_tweets[-1].id - 1
         for tweet in user_tweets:
@@ -117,6 +117,7 @@ def grab_tweets(api, max_id=None):
         pass
     return source_tweets, max_id
 
+
 def grab_toots(api, account_id=None,max_id=None):
     if account_id:
         source_toots = []
@@ -131,7 +132,7 @@ def grab_toots(api, account_id=None,max_id=None):
                     source_toots.append(toot['content'])
         return source_toots, max_id
 
-if __name__ == "__main__":
+def run_all():
     order = ORDER
     guess = 0
     if ODDS and not DEBUG:
@@ -160,7 +161,7 @@ if __name__ == "__main__":
                 max_id = None
                 my_range = min(17, int((status_count/200) + 1))
                 for x in range(1, my_range):
-                    twitter_tweets_iter, max_id = grab_tweets(api, max_id)
+                    twitter_tweets_iter, max_id = grab_tweets(api, user_name=user, max_id=max_id)
                     twitter_tweets += twitter_tweets_iter
                 print("{0} tweets found in {1}".format(len(twitter_tweets), handle))
                 if not twitter_tweets:
@@ -243,3 +244,7 @@ if __name__ == "__main__":
             print("Status is empty, sorry.")
         else:
             print("TOO LONG: " + ebook_status)
+
+if __name__ == "__main__":
+    run_all()
+
