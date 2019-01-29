@@ -1,12 +1,15 @@
 import random
 import re
+
 import local_settings as settings
+
 
 class MarkovChainer(object):
     def __init__(self, order):
         self.order = order
         self.beginnings = []
         self.freq = {}
+        self.__slots__ = ['order', 'beginnings', 'freq']
 
     # pass a string with a terminator to the function to add it to the markov lists.
     def add_sentence(self, string, terminator):
