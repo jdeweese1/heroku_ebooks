@@ -144,7 +144,6 @@ def grab_mentions(api):
 
 
 def reply_to_mention(api, reply_to_id, message):
-    print(f'reply_text is {reply_text}')
     if DEBUG:
         print('Debug is on so not sending')
     else:
@@ -277,7 +276,7 @@ def run_all():
         guess = random.randint(0, ODDS - 1)
 
     if guess:
-        print(str(guess) + " No, sorry, not this time.")  # message if the random number fails.
+        print(f"{guess} No, sorry, not this time.")  # message if the random number fails.
         sys.exit()
     else:
         api = connect()
