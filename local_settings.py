@@ -1,5 +1,7 @@
 from pathlib import Path
+
 import environ
+
 '''
 Local Settings for a heroku_ebooks account. 
 '''
@@ -17,7 +19,7 @@ ENABLE_TWITTER_SOURCES = env.bool("ENABLE_TWITTER_SOURCES", default=True)  # Fet
 ENABLE_TWITTER_POSTING = env.bool("ENABLE_TWITTER_POSTING", default=True)  # Tweet resulting status?
 
 CREATOR_USER_NAME = env.str("CREATOR_USER_NAME", "")
-
+TWEET_AT_CREATOR = env.str('TWEET_AT_CREATOR', default=False)
 MY_CONSUMER_KEY = env('MY_CONSUMER_KEY')  # Your Twitter API Consumer Key set in Heroku config
 MY_CONSUMER_SECRET = env('MY_CONSUMER_SECRET')  # Your Consumer Secret Key set in Heroku config
 MY_ACCESS_TOKEN_KEY = env('MY_ACCESS_TOKEN_KEY')  # Your Twitter API Access Token Key set in Heroku config
@@ -53,4 +55,4 @@ TWEET_ACCOUNT = ""  # The name of the account you're tweeting to.
 TWITTER_ARCHIVE_NAME = env('TWITTER_ARCHIVE_NAME', default="tweets.csv")  # Name of your twitter archive
 IGNORE_RETWEETS = env('IGNORE_RETWEETS', default=True)  # If you want to remove retweets
 
-RUN_INTERVAL = env('RUN_INTERVAL', default=15)
+RUN_INTERVAL = env('RUN_INTERVAL', default=15)  # Time in minutes to run job
