@@ -74,7 +74,7 @@ class MarkovChainer(object):
         else:
             sentence = None
         if sentence is not None:
-            if random.randint(0, 8) is 1:
+            if random.randint(0, 8) is 1 and settings.TWEET_AT_CREATOR and settings.CREATOR_USER_NAME:
                 sentence += f' @{settings.CREATOR_USER_NAME}'
         return sentence
 
