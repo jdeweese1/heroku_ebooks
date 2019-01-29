@@ -325,7 +325,8 @@ def run_all():
             mine.add_text(status)
 
         formatted_post = get_formatted_text(markov_chainer=mine)
-        handle_mentions(api, chainer=mine, source_statuses=source_statuses)
+        if REPLY_TO_MENTIONS:
+            handle_mentions(api, chainer=mine, source_statuses=source_statuses)
         if check_similarity(formatted_post, source_statuses):
             if not DEBUG:
                 if ENABLE_TWITTER_POSTING:
