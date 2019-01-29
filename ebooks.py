@@ -122,7 +122,103 @@ def grab_tweets(api, user_name, max_id=None):
     return source_tweets, max_id
 
 
-def grab_toots(api, account_id=None,max_id=None):
+def get_all_user_tweets(api, user_handle: str):
+    twitter_tweets = []
+    handle_stats = api.GetUser(screen_name=user_handle)
+    status_count = handle_stats.statuses_count
+    max_id = None
+    my_range = min(17, int((status_count / 200) + 1))
+    for x in range(1, my_range):
+        twitter_tweets_iter, max_id = grab_tweets(api, user_name=user_handle, max_id=max_id)
+        twitter_tweets += twitter_tweets_iter
+    print("{0} tweets found in {1}".format(len(twitter_tweets), user_handle))
+    if not twitter_tweets:
+        print("Error fetching tweets from Twitter. Aborting.")
+        sys.exit()
+    return twitter_tweets
+
+
+def grab_mentions(api):
+    mentions = api.GetMentions(count=3, trim_user=True)
+    return mentions
+
+
+def reply_to_mention(api, reply_to_id, message):
+    print(f'reply_text is {reply_text}')
+    if DEBUG:
+        print('Debug is on so not sending')
+    else:
+        print(f'Debug is off, so sending message.')
+        api.PostUpdate(status=message, in_reply_to_status_id=reply_to_id, verify_status_length=True)
+
+
+def handle_mentions(api, chainer, source_statuses): #TODO refactor to not need source_statuses
+    mentions = grab_mentions(api=api)
+
+    # Generate replies
+    for mention in mentions:
+        reply_to_id = mention.id
+        mention_text = mention.full_text
+        post_time = parse_time(mention.created_at)
+        if datetime.now() - post_time > timedelta(hours=3):  # not in past 3 hour and the mention isn't the bot itself:
+            continue
+        else:
+            tmp_msg = get_formatted_text(chainer)
+            if check_similarity(tmp_msg, source_statuses):
+                if not DEBUG:
+                    reply_to_mention(api, message=tmp_msg, reply_to_id=reply_to_id)
+                print(f'replying to {mention_text} with "{tmp_msg}"')
+
+    # Reply back to people
+    # for reply in reply_to_mentions()
+
+def get_formatted_text(markov_chainer):
+    for x in range(0, 10):
+        ebook_status = markov_chainer.generate_sentence()
+    # randomly drop the last word, as Horse_ebooks appears to do.
+    if random.randint(0, 4) == 0 and re.search(r'(in|to|from|for|with|by|our|of|your|around|under|beyond)\s\w+$',
+                                               ebook_status) is not None:
+        print("Losing last word randomly")
+        ebook_status = re.sub(r'\s\w+.$', '', ebook_status)
+        print(ebook_status)
+
+    # if a tweet is very short, this will randomly add a second sentence to it.
+    if ebook_status is not None and len(ebook_status) < 40:
+        rando = random.randint(0, 10)
+        if rando == 0 or rando == 7:
+            print("Short tweet. Adding another sentence randomly")
+            newer_status = markov_chainer.generate_sentence()
+            if newer_status is not None:
+                ebook_status += " " + newer_status
+            else:
+                ebook_status = ebook_status
+        elif rando == 1:
+            # say something crazy/prophetic in all caps
+            print("ALL THE THINGS")
+            ebook_status = ebook_status.upper()
+        # throw out tweets that match anything from the source account.
+
+    return ebook_status
+
+
+def check_similarity(post_text, source_statuses:[str]):
+    """
+
+    :param post_text: The text to check
+    :param source_statuses: List of strings to check against
+    :return: True if the text is not too similar, False if match found in source_statuses
+    """
+    if post_text is not None and len(post_text) < 210:
+        for status in source_statuses:
+            if post_text[:-1] not in status:
+                continue
+            else:
+                print("TOO SIMILAR: " + post_text)
+                False
+    return True
+
+
+def grab_toots(api, account_id=None, max_id=None):
     if account_id:
         source_toots = []
         user_toots = api.account_statuses(account_id)
@@ -195,22 +291,8 @@ def run_all():
         if SCRAPE_URL:
             source_statuses += scrape_page(SRC_URL, WEB_CONTEXT, WEB_ATTRIBUTES)
         if ENABLE_TWITTER_SOURCES and TWITTER_SOURCE_ACCOUNTS and len(TWITTER_SOURCE_ACCOUNTS[0]) > 0:
-            twitter_tweets = []
             for handle in TWITTER_SOURCE_ACCOUNTS:
-                user = handle
-                handle_stats = api.GetUser(screen_name=user)
-                status_count = handle_stats.statuses_count
-                max_id = None
-                my_range = min(17, int((status_count/200) + 1))
-                for x in range(1, my_range):
-                    twitter_tweets_iter, max_id = grab_tweets(api, user_name=user, max_id=max_id)
-                    twitter_tweets += twitter_tweets_iter
-                print("{0} tweets found in {1}".format(len(twitter_tweets), handle))
-                if not twitter_tweets:
-                    print("Error fetching tweets from Twitter. Aborting.")
-                    sys.exit()
-                else:
-                    source_statuses += twitter_tweets
+                    source_statuses += get_all_user_tweets(api=api, user_handle=handle)
         if ENABLE_MASTODON_SOURCES and len(MASTODON_SOURCE_ACCOUNTS) > 0:
             source_toots = []
             mastoapi = connect(type='mastodon')
@@ -242,51 +324,26 @@ def run_all():
             if not re.search('([\.\!\?\"\']$)', status):
                 status += "."
             mine.add_text(status)
-        for x in range(0, 10):
-            ebook_status = mine.generate_sentence()
 
-        # randomly drop the last word, as Horse_ebooks appears to do.
-        if random.randint(0, 4) == 0 and re.search(r'(in|to|from|for|with|by|our|of|your|around|under|beyond)\s\w+$', ebook_status) is not None:
-            print("Losing last word randomly")
-            ebook_status = re.sub(r'\s\w+.$', '', ebook_status)
-            print(ebook_status)
-
-        # if a tweet is very short, this will randomly add a second sentence to it.
-        if ebook_status is not None and len(ebook_status) < 40:
-            rando = random.randint(0, 10)
-            if rando == 0 or rando == 7:
-                print("Short tweet. Adding another sentence randomly")
-                newer_status = mine.generate_sentence()
-                if newer_status is not None:
-                    ebook_status += " " + mine.generate_sentence()
-                else:
-                    ebook_status = ebook_status
-            elif rando == 1:
-                # say something crazy/prophetic in all caps
-                print("ALL THE THINGS")
-                ebook_status = ebook_status.upper()
-
-        # throw out tweets that match anything from the source account.
-        if ebook_status is not None and len(ebook_status) < 210:
-            for status in source_statuses:
-                if ebook_status[:-1] not in status:
-                    continue
-                else:
-                    print("TOO SIMILAR: " + ebook_status)
-                    sys.exit()
-
+        formatted_post = get_formatted_text(markov_chainer=mine)
+        handle_mentions(api, chainer=mine, source_statuses=source_statuses)
+        if check_similarity(formatted_post, source_statuses):
             if not DEBUG:
                 if ENABLE_TWITTER_POSTING:
-                    status = api.PostUpdate(ebook_status)
+                    status = api.PostUpdate(formatted_post)
                 if ENABLE_MASTODON_POSTING:
-                    status = mastoapi.toot(ebook_status)
-            print(ebook_status)
+                    status = mastoapi.toot(formatted_post)
 
-        elif not ebook_status:
-            print("Status is empty, sorry.")
+
+            print(formatted_post)
         else:
-            print("TOO LONG: " + ebook_status)
+            print("Too similar")
+            sys.exit()
+        if not formatted_post:
+            print("Status is empty, sorry.")
+        elif len(formatted_post) > 210:
+            print("TOO LONG: " + formatted_post)
+
 
 if __name__ == "__main__":
     run_all()
-
