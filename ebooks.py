@@ -1,10 +1,15 @@
 import random
 import re
 import sys
-import twitter
-from mastodon import Mastodon
+import typing
+from datetime import datetime, timedelta
+
 import markov
+import twitter
 from bs4 import BeautifulSoup
+from local_settings import *
+from mastodon import Mastodon
+
 try:
     # Python 3
     from html.entities import name2codepoint as n2c
@@ -14,9 +19,8 @@ except ImportError:
     from htmlentitydefs import name2codepoint as n2c
     from urllib2 import urlopen
     chr = unichr
-from local_settings import *
 
-
+#TODO add logging
 def connect(type='twitter'):
     if type == 'twitter':
         return twitter.Api(consumer_key=MY_CONSUMER_KEY,

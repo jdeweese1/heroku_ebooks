@@ -1,5 +1,5 @@
-from apscheduler.schedulers.blocking import BlockingScheduler
 import local_settings as settings
+from apscheduler.schedulers.blocking import BlockingScheduler
 from ebooks import run_all
 
 sched = BlockingScheduler()
