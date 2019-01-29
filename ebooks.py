@@ -159,7 +159,7 @@ def handle_mentions(api, chainer, source_statuses): #TODO refactor to not need s
         reply_to_id = mention.id
         mention_text = mention.full_text
         post_time = parse_time(mention.created_at)
-        if datetime.now() - post_time > timedelta(hours=3):  # not in past 3 hour and the mention isn't the bot itself:
+        if False and datetime.now() - post_time > timedelta(hours=4):  # not in past 3 hour and the mention isn't the bot itself:
             continue
         else:
             tmp_msg = get_formatted_text(chainer)
@@ -277,7 +277,7 @@ def run_all():
 
     if guess:
         print(f"{guess} No, sorry, not this time.")  # message if the random number fails.
-        sys.exit()
+        return
     else:
         api = connect()
         source_statuses = []
