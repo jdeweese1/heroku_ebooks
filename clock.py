@@ -9,4 +9,3 @@ sched = BlockingScheduler()
 def markov_job():
     run_all()
 
-sched.start()
