@@ -1,2 +1,2 @@
 worker: python ebooks.py
-clock: python ebooks.py
+clock: python clock.py
