@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a8d0c6d1d0e9ae7a50971b70df90734f81868b8b7a596585a1b4fad0545f26cf"
+            "sha256": "6f1ea528ef5cfcc74b08c97ba76a068a71e41657558e2ed8d405aa744c8f936f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -23,6 +23,14 @@
             ],
             "markers": "sys_platform == 'darwin'",
             "version": "==0.1.0"
+        },
+        "apscheduler": {
+            "hashes": [
+                "sha256:6599bc78901ee7e9be85cbd073d9cc155c42d2bc867c5cde4d4d1cc339ebfbeb",
+                "sha256:a8fe0c82d1c21bcf4a1b0e00aa35709f1f63fdd36446e406fa56cc0d51d3acc6"
+            ],
+            "index": "pypi",
+            "version": "==3.5.3"
         },
         "asn1crypto": {
             "hashes": [
@@ -336,6 +344,12 @@
                 "sha256:c6cb5e6f57c5a9bdaa40fa71ce7b4af30298fbab9ece9815b5d995ab6217c7d9"
             ],
             "version": "==4.3.2"
+        },
+        "tzlocal": {
+            "hashes": [
+                "sha256:4ebeb848845ac898da6519b9b31879cf13b6626f7184c496037b818e238f2c4e"
+            ],
+            "version": "==1.5.1"
         },
         "urllib3": {
             "hashes": [
