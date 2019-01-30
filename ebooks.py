@@ -148,7 +148,7 @@ def reply_to_mention(api, reply_to_id, message):
         print('Debug is on so not sending')
     else:
         print(f'Debug is off, so sending message.')
-        api.PostUpdate(status=message, in_reply_to_status_id=reply_to_id, verify_status_length=True)
+        api.PostUpdate(status=message, in_reply_to_status_id=reply_to_id, verify_status_length=True, auto_populate_reply_metadata=True)
 
 
 def handle_mentions(api, chainer, source_statuses): #TODO refactor to not need source_statuses
@@ -159,12 +159,12 @@ def handle_mentions(api, chainer, source_statuses): #TODO refactor to not need s
         reply_to_id = mention.id
         mention_text = mention.full_text
         post_time = parse_time(mention.created_at)
-        if False and datetime.now() - post_time > timedelta(hours=4):  # not in past 3 hour and the mention isn't the bot itself:
+        if datetime.now() - post_time > timedelta(hours=4):  # not in past 3 hour and the mention isn't the bot itself:
             continue
         else:
             tmp_msg = get_formatted_text(chainer)
             if check_similarity(tmp_msg, source_statuses):
-                if not DEBUG:
+                if (not DEBUG) and REPLY_TO_MENTIONS:
                     reply_to_mention(api, message=tmp_msg, reply_to_id=reply_to_id)
                 print(f'replying to {mention_text} with "{tmp_msg}"')
 
@@ -213,7 +213,7 @@ def check_similarity(post_text, source_statuses:[str]):
                 continue
             else:
                 print("TOO SIMILAR: " + post_text)
-                False
+                return False
     return True
 
 
