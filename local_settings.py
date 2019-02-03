@@ -18,6 +18,7 @@ if READ_DOT_ENV_FILE is True:
 ENABLE_TWITTER_SOURCES = env.bool("ENABLE_TWITTER_SOURCES", default=True)  # Fetch twitter statuses as source
 ENABLE_TWITTER_POSTING = env.bool("ENABLE_TWITTER_POSTING", default=True)  # Tweet resulting status?
 REPLY_TO_MENTIONS = env.bool('REPLY_TO_MENTIONS', default=False)
+REPLY_INTERVAL = env.int('REPLY_INTERVAL', default=6)  # How many hours old should tweets be before it stops replying back?
 CREATOR_USER_NAME = env.str("CREATOR_USER_NAME", "")
 TWEET_AT_CREATOR = env.str('TWEET_AT_CREATOR', default=False)
 MY_CONSUMER_KEY = env('MY_CONSUMER_KEY')  # Your Twitter API Consumer Key set in Heroku config

@@ -123,8 +123,8 @@ def handle_mentions(api, chainer, source_statuses): #TODO refactor to not need s
     for mention in mentions:
         reply_to_id = mention.id
         mention_text = mention.full_text
-        post_time = parse_time(mention.created_at)
-        if datetime.now() - post_time > timedelta(hours=4):  # not in past 3 hour and the mention isn't the bot itself:
+        post_time = utils.parse_time(mention.created_at)
+        if datetime.now() - post_time > timedelta(hours=settings.REPLY_INTERVAL):  # not in past x hours
             continue
         else:
             tmp_msg = get_formatted_text(chainer)
