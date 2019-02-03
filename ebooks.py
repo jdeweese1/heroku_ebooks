@@ -1,35 +1,39 @@
 import random
 import re
 import sys
-import typing
+import scraper
 from datetime import datetime, timedelta
 
 import markov
 import twitter
-from bs4 import BeautifulSoup
-from local_settings import *
+import local_settings as settings
 from mastodon import Mastodon
+
+import utils
 
 try:
     # Python 3
     from html.entities import name2codepoint as n2c
-    from urllib.request import urlopen
+
 except ImportError:
     # Python 2
     from htmlentitydefs import name2codepoint as n2c
-    from urllib2 import urlopen
     chr = unichr
 
-#TODO add logging
+#  TODO add logging
+
+
 def connect(type='twitter'):
     if type == 'twitter':
-        return twitter.Api(consumer_key=MY_CONSUMER_KEY,
-                       consumer_secret=MY_CONSUMER_SECRET,
-                       access_token_key=MY_ACCESS_TOKEN_KEY,
-                       access_token_secret=MY_ACCESS_TOKEN_SECRET,
-                       tweet_mode='extended')
+        return twitter.Api(consumer_key=settings.MY_CONSUMER_KEY,
+                           consumer_secret=settings.MY_CONSUMER_SECRET,
+                           access_token_key=settings.MY_ACCESS_TOKEN_KEY,
+                           access_token_secret=settings.MY_ACCESS_TOKEN_SECRET,
+                           tweet_mode='extended')
     elif type == 'mastodon':
-        return Mastodon(client_id=CLIENT_CRED_FILENAME, api_base_url=MASTODON_API_BASE_URL, access_token=USER_ACCESS_FILENAME)
+        return Mastodon(client_id=settings.CLIENT_CRED_FILENAME,
+                        api_base_url=settings.MASTODON_API_BASE_URL,
+                        access_token=settings.USER_ACCESS_FILENAME)
     return None
 
 
@@ -56,11 +60,11 @@ def entity(text):
 
 def filter_status(text):
     text = re.sub(r'\b(RT|MT) .+', '', text)  # take out anything after RT or MT
-    text = re.sub(r'(\#|@|(h\/t)|(http))\S+', '', text)  # Take out URLs, hashtags, hts, etc.
+    text = re.sub(r'(\#|@|(h\/t)|(http))\S+', '', text)  # Take out settings.URLs, hashtags, hts, etc.
     text = re.sub('\s+', ' ', text)  # collaspse consecutive whitespace to single spaces.
     text = re.sub(r'\"|\(|\)', '', text)  # take out quotes.
     text = re.sub(r'\s+\(?(via|says)\s@\w+\)?', '', text)  # remove attribution
-    text = re.sub(r'<[^>]*>','', text) #strip out html tags from mastodon posts
+    text = re.sub(r'<[^>]*>', '', text)  # strip out html tags from mastodon posts
     htmlsents = re.findall(r'&\w+;', text)
     for item in htmlsents:
         text = text.replace(item, entity(item))
@@ -70,7 +74,13 @@ def filter_status(text):
 
 def grab_tweets(api, user_name, max_id=None):
     source_tweets = []
-    user_tweets = api.GetUserTimeline(screen_name=user_name, count=200, max_id=max_id, include_rts=True, trim_user=True, exclude_replies=True)
+    user_tweets = api.GetUserTimeline(
+        screen_name=user_name,
+        count=200,
+        max_id=max_id,
+        include_rts=True,
+        trim_user=True,
+        exclude_replies=True)
     if user_tweets:
         max_id = user_tweets[-1].id - 1
         for tweet in user_tweets:
@@ -78,7 +88,7 @@ def grab_tweets(api, user_name, max_id=None):
                 tweet.text = filter_status(tweet.full_text)
             else:
                 tweet.text = filter_status(tweet.full_text)
-            if re.search(SOURCE_EXCLUDE, tweet.text):
+            if re.search(settings.SOURCE_EXCLUDE, tweet.text):
                 continue
             if tweet.text:
                 source_tweets.append(tweet.text)
@@ -109,14 +119,18 @@ def grab_mentions(api):
 
 
 def reply_to_mention(api, reply_to_id, message):
-    if DEBUG:
+    if settings.DEBUG:
         print('Debug is on so not sending')
     else:
         print(f'Debug is off, so sending message.')
-        api.PostUpdate(status=message, in_reply_to_status_id=reply_to_id, verify_status_length=True, auto_populate_reply_metadata=True)
+        api.PostUpdate(
+            status=message,
+            in_reply_to_status_id=reply_to_id,
+            verify_status_length=True,
+            auto_populate_reply_metadata=True)
 
 
-def handle_mentions(api, chainer, source_statuses): #TODO refactor to not need source_statuses
+def handle_mentions(api, chainer):
     mentions = grab_mentions(api=api)
 
     # Generate replies
