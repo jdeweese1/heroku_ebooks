@@ -127,69 +127,22 @@ def handle_mentions(api, chainer, source_statuses): #TODO refactor to not need s
         if datetime.now() - post_time > timedelta(hours=settings.REPLY_INTERVAL):  # not in past x hours
             continue
         else:
-            tmp_msg = get_formatted_text(chainer)
-            if check_similarity(tmp_msg, source_statuses):
-                if (not DEBUG) and REPLY_TO_MENTIONS:
-                    reply_to_mention(api, message=tmp_msg, reply_to_id=reply_to_id)
-                print(f'replying to {mention_text} with "{tmp_msg}"')
-
-    # Reply back to people
-    # for reply in reply_to_mentions()
-
-def get_formatted_text(markov_chainer):
-    for x in range(0, 10):
-        ebook_status = markov_chainer.generate_sentence()
-    # randomly drop the last word, as Horse_ebooks appears to do.
-    if random.randint(0, 4) == 0 and re.search(r'(in|to|from|for|with|by|our|of|your|around|under|beyond)\s\w+$',
-                                               ebook_status) is not None:
-        print("Losing last word randomly")
-        ebook_status = re.sub(r'\s\w+.$', '', ebook_status)
-        print(ebook_status)
-
-    # if a tweet is very short, this will randomly add a second sentence to it.
-    if ebook_status is not None and len(ebook_status) < 40:
-        rando = random.randint(0, 10)
-        if rando == 0 or rando == 7:
-            print("Short tweet. Adding another sentence randomly")
-            newer_status = markov_chainer.generate_sentence()
-            if newer_status is not None:
-                ebook_status += " " + newer_status
-            else:
-                ebook_status = ebook_status
-        elif rando == 1:
-            # say something crazy/prophetic in all caps
-            print("ALL THE THINGS")
-            ebook_status = ebook_status.upper()
-        # throw out tweets that match anything from the source account.
-
-    return ebook_status
-
-
-def check_similarity(post_text, source_statuses:[str]):
-    """
-
-    :param post_text: The text to check
-    :param source_statuses: List of strings to check against
-    :return: True if the text is not too similar, False if match found in source_statuses
-    """
-    if post_text is not None and len(post_text) < 210:
-        for status in source_statuses:
-            if post_text[:-1] not in status:
-                continue
-            else:
-                print("TOO SIMILAR: " + post_text)
-                return False
-    return True
+            rtn_bool, *other_rtns = chainer.new_phrase()
+            if rtn_bool:
+                if (not settings.DEBUG) and settings.REPLY_TO_MENTIONS:
+                    msg = other_rtns[0]
+                    reply_to_mention(api, message=msg, reply_to_id=reply_to_id)
+                    print(f'replying to {mention_text} with "{msg}"')
 
 
 def grab_toots(api, account_id=None, max_id=None):
     if account_id:
         source_toots = []
         user_toots = api.account_statuses(account_id)
-        max_id = user_toots[len(user_toots)-1]['id']-1
+        max_id = user_toots[len(user_toots) - 1]['id'] - 1
         for toot in user_toots:
             if toot['in_reply_to_id'] or toot['reblog']:
-                pass #skip this one
+                pass  # skip this one
             else:
                 toot['content'] = filter_status(toot['content'])
                 if len(toot['content']) != 0:
@@ -198,45 +151,45 @@ def grab_toots(api, account_id=None, max_id=None):
 
 
 def run_all():
-    order = ORDER
+    order = settings.ORDER
     guess = 0
-    if ODDS and not DEBUG:
-        guess = random.randint(0, ODDS - 1)
+    if settings.ODDS and not settings.DEBUG:
+        guess = random.randint(0, settings.ODDS - 1)
 
-    if guess:
+    if guess is not 0:
         print(f"{guess} No, sorry, not this time.")  # message if the random number fails.
         return
     else:
         api = connect()
         source_statuses = []
-        if STATIC_TEST:
-            file = TEST_SOURCE
-            print(">>> Generating from {0}".format(file))
-            string_list = open(file).readlines()
+        if settings.STATIC_TEST:
+            file_name = settings.TEST_SOURCE
+            print(">>> Generating from {0}".format(file_name))
+            string_list = open(file_name).readlines()
             for item in string_list:
                 source_statuses += item.split(",")
-        if SCRAPE_URL:
-            source_statuses += scrape_page(SRC_URL, WEB_CONTEXT, WEB_ATTRIBUTES)
-        if ENABLE_TWITTER_SOURCES and TWITTER_SOURCE_ACCOUNTS and len(TWITTER_SOURCE_ACCOUNTS[0]) > 0:
-            for handle in TWITTER_SOURCE_ACCOUNTS:
+        if settings.SCRAPE_URL:
+            source_statuses += scraper.scrape_page(settings.SRC_URL, settings.WEB_CONTEXT, settings.WEB_ATTRIBUTES)
+        if settings.ENABLE_TWITTER_SOURCES and settings.TWITTER_SOURCE_ACCOUNTS and len(settings.TWITTER_SOURCE_ACCOUNTS[0]) > 0:
+            for handle in settings.TWITTER_SOURCE_ACCOUNTS:
                     source_statuses += get_all_user_tweets(api=api, user_handle=handle)
-        if ENABLE_MASTODON_SOURCES and len(MASTODON_SOURCE_ACCOUNTS) > 0:
+        if settings.ENABLE_MASTODON_SOURCES and len(settings.MASTODON_SOURCE_ACCOUNTS) > 0:
             source_toots = []
             mastoapi = connect(type='mastodon')
-            max_id=None
-            for handle in MASTODON_SOURCE_ACCOUNTS:
+            max_id = None
+            for handle in settings.MASTODON_SOURCE_ACCOUNTS:
                 accounts = mastoapi.account_search(handle)
                 if len(accounts) != 1:
-                    pass # Ambiguous search
+                    pass  # Ambiguous search
                 else:
                     account_id = accounts[0]['id']
                     num_toots = accounts[0]['statuses_count']
                     if num_toots < 3200:
-                        my_range = int((num_toots/200)+1)
+                        my_range = int((num_toots / 200) + 1)
                     else:
                         my_range = 17
-                    for x in range(my_range)[1:]:
-                        source_toots_iter, max_id = grab_toots(mastoapi,account_id, max_id=max_id)
+                    for _ in range(my_range)[1:]:
+                        source_toots_iter, max_id = grab_toots(mastoapi, account_id, max_id=max_id)
                         source_toots += source_toots_iter
                     print("{0} toots found from {1}".format(len(source_toots), handle))
                     if len(source_toots) == 0:
@@ -245,32 +198,27 @@ def run_all():
             source_statuses += source_toots
         if len(source_statuses) == 0:
             print("No statuses found!")
-            sys.exit()
+            return
         mine = markov.MarkovChainer(order)
         for status in source_statuses:
             if not re.search('([\.\!\?\"\']$)', status):
                 status += "."
             mine.add_text(status)
 
-        formatted_post = get_formatted_text(markov_chainer=mine)
-        if REPLY_TO_MENTIONS:
-            handle_mentions(api, chainer=mine, source_statuses=source_statuses)
-        if check_similarity(formatted_post, source_statuses):
-            if not DEBUG:
-                if ENABLE_TWITTER_POSTING:
-                    status = api.PostUpdate(formatted_post)
-                if ENABLE_MASTODON_POSTING:
-                    status = mastoapi.toot(formatted_post)
+        if settings.REPLY_TO_MENTIONS:
+            handle_mentions(api, chainer=mine)
 
-
-            print(formatted_post)
-        else:
-            print("Too similar")
-            sys.exit()
-        if not formatted_post:
-            print("Status is empty, sorry.")
-        elif len(formatted_post) > 210:
-            print("TOO LONG: " + formatted_post)
+        rtn_bool, *other_rtns = mine.new_phrase()
+        if rtn_bool and other_rtns[0]:
+            msg = other_rtns[0]
+            if not settings.DEBUG:
+                if settings.ENABLE_TWITTER_POSTING:
+                    api.PostUpdate(msg)
+                if settings.ENABLE_MASTODON_POSTING:
+                    mastoapi.toot(msg)
+            print(msg)
+        if not rtn_bool:
+            print("Couldn't generate message")
 
 
 if __name__ == "__main__":

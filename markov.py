@@ -9,10 +9,11 @@ class MarkovChainer(object):
         self.order = order
         self.beginnings = []
         self.freq = {}
-        self.__slots__ = ['order', 'beginnings', 'freq']
+        self.text_bank = set()
 
     # pass a string with a terminator to the function to add it to the markov lists.
     def add_sentence(self, string, terminator):
+        self.text_bank.add(string)
         data = "".join(string)
         words = data.split()
         buf = []
@@ -49,7 +50,7 @@ class MarkovChainer(object):
                     sentence = piece
 
     # Generate the goofy sentences that become your tweet.
-    def generate_sentence(self):
+    def _generate_sentence(self):
         res = random.choice(self.beginnings)
         res = res[:]
         if len(res) == self.order:
@@ -57,7 +58,7 @@ class MarkovChainer(object):
             while nw is not None:
                 restup = (res[-2], res[-1])
                 try:
-                    nw = self.next_word_for(restup)
+                    nw = self._next_word_for(restup)
                     if nw is not None:
                         res.append(nw)
                     else:
@@ -81,13 +82,69 @@ class MarkovChainer(object):
                 sentence += f' @{settings.CREATOR_USER_NAME}'
         return sentence
 
-    def next_word_for(self, words):
+    def _next_word_for(self, words):
         try:
             arr = self.freq[words]
             next_words = random.choice(arr)
             return next_words
         except Exception:
             return None
+
+    def _get_formatted_text(self):
+        for x in range(0, 10):
+            ebook_status = self._generate_sentence()
+        # randomly drop the last word, as Horse_ebooks appears to do.
+        if random.randint(0, 4) == 0 and re.search(r'(in|to|from|for|with|by|our|of|your|around|under|beyond)\s\w+$',
+                                                   ebook_status) is not None:
+            print("Losing last word randomly")
+            ebook_status = re.sub(r'\s\w+.$', '', ebook_status)
+            print(ebook_status)
+
+        # if a tweet is very short, this will randomly add a second sentence to it.
+        if ebook_status is not None and len(ebook_status) < 40:
+            rando = random.randint(0, 10)
+            if rando == 0 or rando == 7:
+                print("Short tweet. Adding another sentence randomly")
+                newer_status = self._generate_sentence()
+                if newer_status is not None:
+                    ebook_status += " " + newer_status
+                else:
+                    ebook_status = ebook_status
+            elif rando == 1:
+                # say something crazy/prophetic in all caps
+                print("ALL THE THINGS")
+                ebook_status = ebook_status.upper()
+            # throw out tweets that match anything from the source account.
+
+        return ebook_status
+
+    def _check_similarity(self, post_text):
+        """
+        :param post_text: The text to check
+        :return: True if the text is not too similar, False if match found in source_statuses
+        """
+        if post_text is not None and len(post_text) < 210:
+            for status in self.text_bank:
+                if post_text[:-1] not in status:
+                    continue
+                else:
+                    print("TOO SIMILAR: " + post_text)
+                    return False
+        return True
+
+    def new_phrase(self):
+        tmp_txt = self._get_formatted_text()
+        is_valid = self._check_similarity(post_text=tmp_txt)
+        if not is_valid:
+            for _ in range(4):
+                tmp_txt = self._get_formatted_text()
+                is_valid = self._check_similarity(post_text=tmp_txt)
+
+        if not is_valid:
+            print('No fitting phrase available')
+            return (False, )
+        else:
+            return (True, tmp_txt, )
 
 
 if __name__ == "__main__":
