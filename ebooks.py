@@ -120,9 +120,9 @@ def grab_mentions(api):
 
 def reply_to_mention(api, reply_to_id, message):
     if settings.DEBUG:
-        print('Debug is on so not sending')
+        print(f'Debug is on so not replying with {message}')
     else:
-        print(f'Debug is off, so sending message.')
+        print(f'Debug is off, so replying with {message}.')
         api.PostUpdate(
             status=message,
             in_reply_to_status_id=reply_to_id,
@@ -143,10 +143,9 @@ def handle_mentions(api, chainer):
         else:
             rtn_bool, *other_rtns = chainer.new_phrase()
             if rtn_bool:
-                if (not settings.DEBUG) and settings.REPLY_TO_MENTIONS:
+                if settings.REPLY_TO_MENTIONS:
                     msg = other_rtns[0]
                     reply_to_mention(api, message=msg, reply_to_id=reply_to_id)
-                    print(f'replying to {mention_text} with "{msg}"')
 
 
 def grab_toots(api, account_id=None, max_id=None):
