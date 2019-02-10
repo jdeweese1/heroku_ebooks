@@ -108,8 +108,7 @@ def get_all_user_tweets(api, user_handle: str):
         twitter_tweets += twitter_tweets_iter
     print("{0} tweets found in {1}".format(len(twitter_tweets), user_handle))
     if not twitter_tweets:
-        print("Error fetching tweets from Twitter. Aborting.")
-        sys.exit()
+        print(f"Error fetching tweets from Twitter for {user_handle}. Aborting.")
     return twitter_tweets
 
 
