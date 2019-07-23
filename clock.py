@@ -8,4 +8,3 @@ sched = BlockingScheduler()
 @sched.scheduled_job('interval', minutes=settings.RUN_INTERVAL)
 def markov_job():
     run_all()
-

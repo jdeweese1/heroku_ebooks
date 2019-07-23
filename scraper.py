@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 
 try:
     from urllib.request import urlopen
+    import requests
 except ImportError:
     from urllib2 import urlopen
 
@@ -37,5 +38,13 @@ def scrape_page(src_url, web_context, web_attributes):
                 if tweet:
                     tweets.append(tweet)
             if errors > 0:
-                print(">>> We had trouble reading {} result{}.".format(errors, "s" if errors > 1 else ""))
+                print(">>> We had trouble reading {} result{}.".format(
+                    errors, "s" if errors > 1 else ""))
     return (tweets)
+
+
+def scrape_web_text_file(src_url):
+    resp = requests.get(src_url)
+    if resp.status_code != 200:
+        return ''
+    return resp.content.decode('utf-8')

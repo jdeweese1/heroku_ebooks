@@ -65,12 +65,16 @@ def entity(text):
 
 
 def filter_status(text):
-    text = re.sub(r'\b(RT|MT) .+', '', text)  # take out anything after RT or MT
-    text = re.sub(r'(\#|@|(h\/t)|(http))\S+', '', text)  # Take out settings.URLs, hashtags, hts, etc.
-    text = re.sub('\s+', ' ', text)  # collaspse consecutive whitespace to single spaces.
+    # take out anything after RT or MT
+    text = re.sub(r'\b(RT|MT) .+', '', text)
+    # Take out settings.URLs, hashtags, hts, etc.
+    text = re.sub(r'(\#|@|(h\/t)|(http))\S+', '', text)
+    # collaspse consecutive whitespace to single spaces.
+    text = re.sub('\s+', ' ', text)
     text = re.sub(r'\"|\(|\)', '', text)  # take out quotes.
     text = re.sub(r'\s+\(?(via|says)\s@\w+\)?', '', text)  # remove attribution
-    text = re.sub(r'<[^>]*>', '', text)  # strip out html tags from mastodon posts
+    # strip out html tags from mastodon posts
+    text = re.sub(r'<[^>]*>', '', text)
     htmlsents = re.findall(r'&\w+;', text)
     for item in htmlsents:
         text = text.replace(item, entity(item))
@@ -110,7 +114,8 @@ def get_all_user_tweets(api, user_handle: str):
     max_id = None
     my_range = min(17, int((status_count / 200) + 1))
     for x in range(1, my_range):
-        twitter_tweets_iter, max_id = grab_tweets(api, user_name=user_handle, max_id=max_id)
+        twitter_tweets_iter, max_id = grab_tweets(
+            api, user_name=user_handle, max_id=max_id)
         twitter_tweets += twitter_tweets_iter
     print("{0} tweets found in {1}".format(len(twitter_tweets), user_handle))
     if not twitter_tweets:
@@ -228,9 +233,8 @@ def run_all():
         guess = random.randint(0, settings.ODDS - 1)
 
     if guess is not 0:
-        print(
-            f"{guess} No, sorry, not this time."
-        )  # message if the random number fails.
+        # message if the random number fails.
+        print(f"{guess} No, sorry, not this time.")
         return
     else:
         twitter_api = connect()
@@ -249,8 +253,8 @@ def run_all():
                 if settings.ENABLE_MASTODON_POSTING:
                     pass
             print(msg)
-        if not rtn_bool:
-            print("Couldn't generate message")
+            if not rtn_bool:
+                print("Couldn't generate message")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,8 @@ from datetime import datetime
 
 
 def parse_time(string_time):
-    day_of_week, month, month_day, time_str, _, year_str = string_time.split(' ')
+    day_of_week, month, month_day, time_str, _, year_str = string_time.split(
+        ' ')
     month_map = {
         'january': 1,
         'february': 2,
