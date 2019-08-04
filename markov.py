@@ -128,7 +128,6 @@ class MarkovChainer(object):
                 if post_text[:-1] not in status:
                     continue
                 else:
-                    print("TOO SIMILAR: " + post_text)
                     return False
         return True
 

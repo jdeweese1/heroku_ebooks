@@ -7,12 +7,13 @@ name = "pypi"
 python-twitter = "*"
 "beautifulsoup4" = "*"
 "Mastodon.py" = "*"
-ipdb = "*"
 django-environ = "~=0.4.4"
-"flake8" = "*"
 apscheduler = "*"
+pyperclip = "*"
 
 [dev-packages]
+"flake8" = "*"
+ipdb = "*"
 
 [requires]
 python_version = "3.6"

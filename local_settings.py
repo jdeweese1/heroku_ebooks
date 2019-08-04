@@ -3,7 +3,7 @@ from pathlib import Path
 import environ
 
 '''
-Local Settings for a heroku_ebooks account. 
+Local Settings for a heroku_ebooks account.
 '''
 root = environ.Path(__file__) - 1
 env = environ.Env()

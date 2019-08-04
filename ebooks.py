@@ -3,6 +3,7 @@ import re
 import sys
 import scraper
 from datetime import datetime, timedelta
+from typing import Optional
 
 import markov
 import twitter
@@ -18,22 +19,27 @@ try:
 except ImportError:
     # Python 2
     from htmlentitydefs import name2codepoint as n2c
+
     chr = unichr
 
 #  TODO add logging
 
 
-def connect(type='twitter'):
-    if type == 'twitter':
-        return twitter.Api(consumer_key=settings.MY_CONSUMER_KEY,
-                           consumer_secret=settings.MY_CONSUMER_SECRET,
-                           access_token_key=settings.MY_ACCESS_TOKEN_KEY,
-                           access_token_secret=settings.MY_ACCESS_TOKEN_SECRET,
-                           tweet_mode='extended')
-    elif type == 'mastodon':
-        return Mastodon(client_id=settings.CLIENT_CRED_FILENAME,
-                        api_base_url=settings.MASTODON_API_BASE_URL,
-                        access_token=settings.USER_ACCESS_FILENAME)
+def connect(type="twitter"):
+    if type == "twitter":
+        return twitter.Api(
+            consumer_key=settings.MY_CONSUMER_KEY,
+            consumer_secret=settings.MY_CONSUMER_SECRET,
+            access_token_key=settings.MY_ACCESS_TOKEN_KEY,
+            access_token_secret=settings.MY_ACCESS_TOKEN_SECRET,
+            tweet_mode="extended",
+        )
+    elif type == "mastodon":
+        return Mastodon(
+            client_id=settings.CLIENT_CRED_FILENAME,
+            api_base_url=settings.MASTODON_API_BASE_URL,
+            access_token=settings.USER_ACCESS_FILENAME,
+        )
     return None
 
 
@@ -162,6 +168,59 @@ def grab_toots(api, account_id=None, max_id=None):
         return source_toots, max_id
 
 
+def seed_chainer(chainer: markov.MarkovChainer, twitter_api, mastodon_api: Optional = None):
+    source_statuses = []
+    if settings.STATIC_TEST:
+        file_name = settings.TEST_SOURCE
+        print(">>> Generating from {0}".format(file_name))
+        string_list = open(file_name, encoding='utf-8').readlines()
+        for item in string_list:
+            source_statuses += item.split(",")
+    if settings.SCRAPE_URL:
+        source_statuses += scraper.scrape_page(
+            settings.SRC_URL, settings.WEB_CONTEXT, settings.WEB_ATTRIBUTES
+        )
+    if (
+        settings.ENABLE_TWITTER_SOURCES
+        and settings.TWITTER_SOURCE_ACCOUNTS
+        and len(settings.TWITTER_SOURCE_ACCOUNTS[0]) > 0
+    ):
+        for handle in settings.TWITTER_SOURCE_ACCOUNTS:
+            source_statuses += get_all_user_tweets(
+                api=twitter_api, user_handle=handle)
+    if settings.ENABLE_MASTODON_SOURCES and len(settings.MASTODON_SOURCE_ACCOUNTS) > 0:
+        source_toots = []
+        mastoapi = mastodon_api
+        max_id = None
+        for handle in settings.MASTODON_SOURCE_ACCOUNTS:
+            accounts = mastoapi.account_search(handle)
+            if len(accounts) != 1:
+                pass  # Ambiguous search
+            else:
+                account_id = accounts[0]["id"]
+                num_toots = accounts[0]["statuses_count"]
+                if num_toots < 3200:
+                    my_range = int((num_toots / 200) + 1)
+                else:
+                    my_range = 17
+                for _ in range(my_range)[1:]:
+                        source_toots_iter, max_id = grab_toots(mastoapi, account_id, max_id=max_id)
+                        source_toots += source_toots_iter
+                        print("{0} toots found from {1}".format(len(source_toots), handle))
+                if len(source_toots) == 0:
+                    print("Error fetching toots for %s. Aborting." % handle)
+                    sys.exit()
+        source_statuses += source_toots
+    if len(source_statuses) == 0:
+        print("No statuses found!")
+        return
+    for status in source_statuses:
+        if not re.search("([\.\!\?\"']$)", status):
+            status += "."
+        chainer.add_text(status)
+    return chainer
+
+
 def run_all():
     order = settings.ORDER
     guess = 0
@@ -169,65 +228,26 @@ def run_all():
         guess = random.randint(0, settings.ODDS - 1)
 
     if guess is not 0:
-        print(f"{guess} No, sorry, not this time.")  # message if the random number fails.
+        print(
+            f"{guess} No, sorry, not this time."
+        )  # message if the random number fails.
         return
     else:
-        api = connect()
-        source_statuses = []
-        if settings.STATIC_TEST:
-            file_name = settings.TEST_SOURCE
-            print(">>> Generating from {0}".format(file_name))
-            string_list = open(file_name).readlines()
-            for item in string_list:
-                source_statuses += item.split(",")
-        if settings.SCRAPE_URL:
-            source_statuses += scraper.scrape_page(settings.SRC_URL, settings.WEB_CONTEXT, settings.WEB_ATTRIBUTES)
-        if settings.ENABLE_TWITTER_SOURCES and settings.TWITTER_SOURCE_ACCOUNTS and len(settings.TWITTER_SOURCE_ACCOUNTS[0]) > 0:
-            for handle in settings.TWITTER_SOURCE_ACCOUNTS:
-                    source_statuses += get_all_user_tweets(api=api, user_handle=handle)
-        if settings.ENABLE_MASTODON_SOURCES and len(settings.MASTODON_SOURCE_ACCOUNTS) > 0:
-            source_toots = []
-            mastoapi = connect(type='mastodon')
-            max_id = None
-            for handle in settings.MASTODON_SOURCE_ACCOUNTS:
-                accounts = mastoapi.account_search(handle)
-                if len(accounts) != 1:
-                    pass  # Ambiguous search
-                else:
-                    account_id = accounts[0]['id']
-                    num_toots = accounts[0]['statuses_count']
-                    if num_toots < 3200:
-                        my_range = int((num_toots / 200) + 1)
-                    else:
-                        my_range = 17
-                    for _ in range(my_range)[1:]:
-                        source_toots_iter, max_id = grab_toots(mastoapi, account_id, max_id=max_id)
-                        source_toots += source_toots_iter
-                    print("{0} toots found from {1}".format(len(source_toots), handle))
-                    if len(source_toots) == 0:
-                        print("Error fetching toots for %s. Aborting." % handle)
-                        sys.exit()
-            source_statuses += source_toots
-        if len(source_statuses) == 0:
-            print("No statuses found!")
-            return
+        twitter_api = connect()
         mine = markov.MarkovChainer(order)
-        for status in source_statuses:
-            if not re.search('([\.\!\?\"\']$)', status):
-                status += "."
-            mine.add_text(status)
+        seed_chainer(chainer=mine, twitter_api=twitter_api)
 
         if settings.REPLY_TO_MENTIONS:
-            handle_mentions(api, chainer=mine)
+            handle_mentions(twitter_api, chainer=mine)
 
         rtn_bool, *other_rtns = mine.new_phrase()
         if rtn_bool and other_rtns[0]:
             msg = other_rtns[0]
             if not settings.DEBUG:
                 if settings.ENABLE_TWITTER_POSTING:
-                    api.PostUpdate(msg)
+                    twitter_api.PostUpdate(msg)
                 if settings.ENABLE_MASTODON_POSTING:
-                    mastoapi.toot(msg)
+                    pass
             print(msg)
         if not rtn_bool:
             print("Couldn't generate message")
