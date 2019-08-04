@@ -185,6 +185,9 @@ def seed_chainer(chainer: markov.MarkovChainer, twitter_api, mastodon_api: Optio
         source_statuses += scraper.scrape_page(
             settings.SRC_URL, settings.WEB_CONTEXT, settings.WEB_ATTRIBUTES
         )
+    if settings.SCRAPE_WEB_FILE:
+        source_statuses += scraper.scrape_web_text_file(
+            settings.WEB_FILE_URL).split('.')
     if (
         settings.ENABLE_TWITTER_SOURCES
         and settings.TWITTER_SOURCE_ACCOUNTS
